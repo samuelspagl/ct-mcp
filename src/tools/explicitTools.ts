@@ -813,7 +813,8 @@ async function resolveCurrentPerson(api: ChurchToolsRequester): Promise<{
   const personId =
     numberField(data, ["personId", "person_id"]) ??
     numberField(person, ["id", "personId", "person_id"]) ??
-    numberField(user, ["personId", "person_id"]);
+    numberField(user, ["personId", "person_id"]) ??
+    numberField(data, ["id"]);
 
   if (!personId) {
     throw new StructuredToolError("CURRENT_PERSON_NOT_FOUND", "Could not determine the current ChurchTools person ID from /whoami.", { raw });
@@ -821,9 +822,13 @@ async function resolveCurrentPerson(api: ChurchToolsRequester): Promise<{
 
   return {
     personId,
-    userId: numberField(data, ["userId", "user_id", "id"]) ?? numberField(user, ["id", "userId", "user_id"]),
+    userId: numberField(data, ["userId", "user_id", "cmsUserId", "cms_user_id"]) ?? numberField(user, ["id", "userId", "user_id"]),
     email: stringField(data, ["email"]) ?? stringField(person, ["email"]) ?? stringField(user, ["email"]),
-    displayName: stringField(data, ["name", "displayName"]) ?? stringField(person, ["name", "displayName"]) ?? stringField(user, ["name", "displayName"]),
+    displayName:
+      stringField(data, ["name", "displayName"]) ??
+      stringField(person, ["name", "displayName"]) ??
+      stringField(user, ["name", "displayName"]) ??
+      joinedName(data),
     raw
   };
 }
@@ -1094,6 +1099,13 @@ function stringField(value: unknown, keys: string[]): string | undefined {
     }
   }
   return undefined;
+}
+
+function joinedName(value: unknown): string | undefined {
+  const firstName = stringField(value, ["firstName", "first_name"]);
+  const lastName = stringField(value, ["lastName", "last_name"]);
+  const name = [firstName, lastName].filter(Boolean).join(" ").trim();
+  return name.length > 0 ? name : undefined;
 }
 
 function idOf(value: unknown): number | undefined {

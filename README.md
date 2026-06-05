@@ -78,23 +78,21 @@ The HTTP endpoints are:
 
 ## Tools
 
-Dedicated `ct_*` tools cover current user context, people, groups, events, calendar appointments, absences, service requests, songs, wiki search/read, and masterdata. They use explicit names such as `ct_list_events`, `ct_list_my_events`, and `ct_list_person_events` so the scope is clear.
-
-The older `churchtools_*` read tools remain available for compatibility and common direct reads.
+Dedicated `ct_*` tools cover current user context, people, groups, events, calendars, resources, bookings, absences, service requests, songs, wiki search/read, and masterdata. The server intentionally exposes only the `ct_*` namespace so clients do not see duplicate `ct_*` and `churchtools_*` variants of the same workflows.
 
 Dedicated write tools:
 
-- `churchtools_update_song`
-- `churchtools_update_event`
-- `churchtools_update_wiki_category`
+- `ct_update_song`
+- `ct_update_event`
+- `ct_update_wiki_category`
 
 All write tools use MCP elicitation for confirmation when supported. If the client does not advertise elicitation support, the tool returns `confirmation_required`; retry the same tool with `confirm=true` after user confirmation.
 
 Generic OpenAPI tools:
 
-- `churchtools_search_actions`
-- `churchtools_execute_read_action`
-- `churchtools_execute_write_action`
+- `ct_search_actions`
+- `ct_execute_read_action`
+- `ct_execute_write_action`
 
 ## Docker
 

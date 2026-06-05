@@ -29,7 +29,6 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Created
   const config = options.config ?? parseConfig();
   const catalog = options.catalog ?? (await OpenApiCatalog.load(config.churchToolsOpenApiUrl));
   const api = options.api ?? createChurchToolsApi(config);
-  const mcpServer = createChurchToolsMcpServer({ config, api, catalog });
 
   const app = express();
   app.disable("x-powered-by");
@@ -51,6 +50,7 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Created
       sessionIdGenerator: undefined
     });
     const requestId = randomUUID();
+    const mcpServer = createChurchToolsMcpServer({ config, api, catalog });
 
     res.on("close", () => {
       void transport.close();

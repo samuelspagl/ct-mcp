@@ -17,14 +17,14 @@ const searchActionsInputSchema = {
 };
 
 const executeReadInputSchema = {
-  action_id: z.string().min(1).describe("OpenAPI operation ID returned by churchtools_search_actions."),
+  action_id: z.string().min(1).describe("OpenAPI operation ID returned by ct_search_actions."),
   path_params: PathParamsSchema,
   query: QueryRecordSchema,
   response_format: ResponseFormatSchema
 };
 
 const executeWriteInputSchema = {
-  action_id: z.string().min(1).describe("OpenAPI operation ID returned by churchtools_search_actions."),
+  action_id: z.string().min(1).describe("OpenAPI operation ID returned by ct_search_actions."),
   path_params: PathParamsSchema,
   query: QueryRecordSchema,
   body: UnknownBodySchema,
@@ -45,7 +45,7 @@ export function registerCatalogTools(
   const confirmationHost = () => server as unknown as ConfirmationHost;
 
   server.registerTool(
-    "churchtools_search_actions",
+    "ct_search_actions",
     {
       title: "Search ChurchTools Actions",
       description: "Search the ChurchTools OpenAPI catalog for read or write operations. Use before generic execute tools.",
@@ -61,7 +61,7 @@ export function registerCatalogTools(
   );
 
   server.registerTool(
-    "churchtools_execute_read_action",
+    "ct_execute_read_action",
     {
       title: "Execute ChurchTools Read Action",
       description: "Execute a GET operation from the ChurchTools OpenAPI catalog by operation ID.",
@@ -78,7 +78,7 @@ export function registerCatalogTools(
   );
 
   server.registerTool(
-    "churchtools_execute_write_action",
+    "ct_execute_write_action",
     {
       title: "Execute ChurchTools Write Action",
       description: "Execute a non-GET operation from the ChurchTools OpenAPI catalog by operation ID after confirmation.",
@@ -131,7 +131,7 @@ export async function runExecuteReadAction(
       throw new Error(`Unknown ChurchTools action: ${params.action_id}`);
     }
     if (!operation.isRead) {
-      throw new Error(`${params.action_id} is not a read action. Use churchtools_execute_write_action.`);
+      throw new Error(`${params.action_id} is not a read action. Use ct_execute_write_action.`);
     }
 
     const request = catalog.buildRequest({
@@ -164,7 +164,7 @@ export async function runExecuteWriteAction(
       throw new Error(`Unknown ChurchTools action: ${params.action_id}`);
     }
     if (operation.isRead) {
-      throw new Error(`${params.action_id} is a read action. Use churchtools_execute_read_action.`);
+      throw new Error(`${params.action_id} is a read action. Use ct_execute_read_action.`);
     }
 
     const request = catalog.buildRequest({

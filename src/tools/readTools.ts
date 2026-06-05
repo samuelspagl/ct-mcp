@@ -37,7 +37,7 @@ const pageLimitInput = {
 
 export const readToolDefinitions: ReadToolDefinition[] = [
   {
-    name: "churchtools_whoami",
+    name: "ct_whoami",
     title: "ChurchTools Current User",
     description: "Return the ChurchTools user associated with the configured token.",
     inputSchema: {
@@ -46,7 +46,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     buildRequest: () => ({ method: "GET", path: "/whoami", query: { only_allow_authenticated: true } })
   },
   {
-    name: "churchtools_list_persons",
+    name: "ct_list_persons",
     title: "ChurchTools Persons",
     description: "List persons with common filters such as IDs, status IDs, campus IDs, and pagination.",
     inputSchema: {
@@ -73,7 +73,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     })
   },
   {
-    name: "churchtools_get_person",
+    name: "ct_get_person",
     title: "ChurchTools Person",
     description: "Get one person by numeric ID or GUID.",
     inputSchema: {
@@ -88,7 +88,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     })
   },
   {
-    name: "churchtools_list_person_groups",
+    name: "ct_list_person_groups",
     title: "ChurchTools Person Groups",
     description: "List all groups a person belongs to.",
     inputSchema: {
@@ -98,7 +98,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     buildRequest: (params) => ({ method: "GET", path: `/persons/${params.personId}/groups` })
   },
   {
-    name: "churchtools_list_person_events",
+    name: "ct_list_person_events",
     title: "ChurchTools Person Events",
     description: "List events a person is involved with.",
     inputSchema: {
@@ -108,7 +108,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     buildRequest: (params) => ({ method: "GET", path: `/persons/${params.personId}/events` })
   },
   {
-    name: "churchtools_list_groups",
+    name: "ct_list_groups",
     title: "ChurchTools Groups",
     description: "List groups with common filters and pagination.",
     inputSchema: {
@@ -135,7 +135,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     })
   },
   {
-    name: "churchtools_get_group",
+    name: "ct_get_group",
     title: "ChurchTools Group",
     description: "Get one group by ID.",
     inputSchema: {
@@ -145,7 +145,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     buildRequest: (params) => ({ method: "GET", path: `/groups/${params.groupId}` })
   },
   {
-    name: "churchtools_list_group_members",
+    name: "ct_list_group_members",
     title: "ChurchTools Group Members",
     description: "List members of a ChurchTools group.",
     inputSchema: {
@@ -171,7 +171,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     })
   },
   {
-    name: "churchtools_list_events",
+    name: "ct_list_events",
     title: "ChurchTools Events",
     description: "List events with date range, cancellation, direction, include, and pagination filters.",
     inputSchema: {
@@ -198,7 +198,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     })
   },
   {
-    name: "churchtools_get_event",
+    name: "ct_get_event",
     title: "ChurchTools Event",
     description: "Get one event by ID.",
     inputSchema: {
@@ -208,7 +208,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     buildRequest: (params) => ({ method: "GET", path: `/events/${params.eventId}` })
   },
   {
-    name: "churchtools_get_event_agenda",
+    name: "ct_get_event_agenda",
     title: "ChurchTools Event Agenda",
     description: "Get the agenda for one event.",
     inputSchema: {
@@ -218,14 +218,14 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     buildRequest: (params) => ({ method: "GET", path: `/events/${params.eventId}/agenda` })
   },
   {
-    name: "churchtools_list_calendars",
+    name: "ct_list_calendars",
     title: "ChurchTools Calendars",
     description: "List calendars visible to the current user.",
     inputSchema: responseFormatInput,
     buildRequest: () => ({ method: "GET", path: "/calendars" })
   },
   {
-    name: "churchtools_list_calendar_appointments",
+    name: "ct_list_calendar_appointments",
     title: "ChurchTools Calendar Appointments",
     description: "List appointments for one or more calendars.",
     inputSchema: {
@@ -249,14 +249,14 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     })
   },
   {
-    name: "churchtools_list_resources",
+    name: "ct_list_resources",
     title: "ChurchTools Resources",
     description: "List resources visible to the current user.",
     inputSchema: responseFormatInput,
     buildRequest: () => ({ method: "GET", path: "/resources" })
   },
   {
-    name: "churchtools_list_bookings",
+    name: "ct_list_bookings",
     title: "ChurchTools Bookings",
     description: "List bookings for one or more resources.",
     inputSchema: {
@@ -284,7 +284,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     })
   },
   {
-    name: "churchtools_get_booking",
+    name: "ct_get_booking",
     title: "ChurchTools Booking",
     description: "Get one booking by ID.",
     inputSchema: {
@@ -294,7 +294,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     buildRequest: (params) => ({ method: "GET", path: `/bookings/${params.bookingId}` })
   },
   {
-    name: "churchtools_search_songs",
+    name: "ct_search_songs",
     title: "ChurchTools Songs",
     description: "Search or list songs.",
     inputSchema: {
@@ -321,7 +321,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     })
   },
   {
-    name: "churchtools_get_song",
+    name: "ct_get_song",
     title: "ChurchTools Song",
     description: "Get one song by ID.",
     inputSchema: {
@@ -331,7 +331,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     buildRequest: (params) => ({ method: "GET", path: `/songs/${params.songId}` })
   },
   {
-    name: "churchtools_search_wiki",
+    name: "ct_search_wiki",
     title: "ChurchTools Wiki Search",
     description: "Search wiki pages.",
     inputSchema: {
@@ -349,14 +349,14 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     })
   },
   {
-    name: "churchtools_list_wiki_categories",
+    name: "ct_list_wiki_categories",
     title: "ChurchTools Wiki Categories",
     description: "List wiki categories.",
     inputSchema: responseFormatInput,
     buildRequest: () => ({ method: "GET", path: "/wiki/categories" })
   },
   {
-    name: "churchtools_list_wiki_pages",
+    name: "ct_list_wiki_pages",
     title: "ChurchTools Wiki Pages",
     description: "List wiki pages in a category.",
     inputSchema: {
@@ -366,7 +366,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     buildRequest: (params) => ({ method: "GET", path: `/wiki/categories/${params.wikiCategoryId}/pages` })
   },
   {
-    name: "churchtools_get_wiki_page",
+    name: "ct_get_wiki_page",
     title: "ChurchTools Wiki Page",
     description: "Get the latest version of a wiki page by category ID and page identifier.",
     inputSchema: {
@@ -384,9 +384,14 @@ export const readToolDefinitions: ReadToolDefinition[] = [
 export function registerReadTools(
   server: McpServer,
   api: ChurchToolsRequester,
-  config: Pick<AppConfig, "maxResponseBytes">
+  config: Pick<AppConfig, "maxResponseBytes">,
+  skipNames: ReadonlySet<string> = new Set()
 ): void {
   for (const definition of readToolDefinitions) {
+    if (skipNames.has(definition.name)) {
+      continue;
+    }
+
     server.registerTool(
       definition.name,
       {

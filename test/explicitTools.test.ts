@@ -86,6 +86,30 @@ describe("explicit ChurchTools tools", () => {
     });
   });
 
+  it("supports ChurchTools whoami responses that return the person directly in data", async () => {
+    const api = {
+      request: vi.fn(async () => ({
+        data: {
+          id: 1,
+          firstName: "Armin",
+          lastName: "Adendorf",
+          email: "armin@example.test",
+          cmsUserId: 9
+        }
+      }))
+    };
+
+    const result = await runExplicitTool(getTool("ct_whoami"), api, { response_format: "json" }, testConfig);
+
+    expect(result.isError).toBeUndefined();
+    expect(result.structuredContent).toMatchObject({
+      personId: 1,
+      userId: 9,
+      name: "Armin Adendorf",
+      email: "armin@example.test"
+    });
+  });
+
   it("passes MCP auth context through ct_whoami requests", async () => {
     const api = {
       request: vi.fn(async () => ({

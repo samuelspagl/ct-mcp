@@ -57,7 +57,7 @@ export function registerWriteTools(
   const confirmationHost = () => server as unknown as ConfirmationHost;
 
   server.registerTool(
-    "churchtools_update_song",
+    "ct_update_song",
     {
       title: "Update ChurchTools Song",
       description: "Update a song by ID, including tags. Missing required ChurchTools PUT fields are preserved from the current song.",
@@ -74,7 +74,7 @@ export function registerWriteTools(
   );
 
   server.registerTool(
-    "churchtools_update_event",
+    "ct_update_event",
     {
       title: "Update ChurchTools Event",
       description: "Update mutable event fields: adminIds, isCanceled, and note.",
@@ -91,7 +91,7 @@ export function registerWriteTools(
   );
 
   server.registerTool(
-    "churchtools_update_wiki_category",
+    "ct_update_wiki_category",
     {
       title: "Update ChurchTools Wiki Category",
       description: "Update a wiki category. This server does not invent wiki page writes because the OpenAPI document only exposes category writes.",

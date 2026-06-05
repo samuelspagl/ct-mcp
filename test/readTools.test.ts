@@ -6,28 +6,28 @@ import type { ChurchToolsRequest } from "../src/types.js";
 import { testConfig } from "./helpers.js";
 
 const sampleParams: Record<string, Record<string, unknown>> = {
-  churchtools_whoami: {},
-  churchtools_list_persons: { page: 1, limit: 20 },
-  churchtools_get_person: { personId: 1 },
-  churchtools_list_person_groups: { personId: 1 },
-  churchtools_list_person_events: { personId: 1 },
-  churchtools_list_groups: { page: 1, limit: 20 },
-  churchtools_get_group: { groupId: 1 },
-  churchtools_list_group_members: { groupId: 1, page: 1, limit: 20 },
-  churchtools_list_events: { page: 1, limit: 20 },
-  churchtools_get_event: { eventId: 1 },
-  churchtools_get_event_agenda: { eventId: 1 },
-  churchtools_list_calendars: {},
-  churchtools_list_calendar_appointments: { calendar_ids: [1] },
-  churchtools_list_resources: {},
-  churchtools_list_bookings: { resource_ids: [1] },
-  churchtools_get_booking: { bookingId: 1 },
-  churchtools_search_songs: { page: 1, limit: 20 },
-  churchtools_get_song: { songId: 1 },
-  churchtools_search_wiki: { query: "policy" },
-  churchtools_list_wiki_categories: {},
-  churchtools_list_wiki_pages: { wikiCategoryId: 1 },
-  churchtools_get_wiki_page: { wikiCategoryId: 1, identifier: "main" }
+  ct_whoami: {},
+  ct_list_persons: { page: 1, limit: 20 },
+  ct_get_person: { personId: 1 },
+  ct_list_person_groups: { personId: 1 },
+  ct_list_person_events: { personId: 1 },
+  ct_list_groups: { page: 1, limit: 20 },
+  ct_get_group: { groupId: 1 },
+  ct_list_group_members: { groupId: 1, page: 1, limit: 20 },
+  ct_list_events: { page: 1, limit: 20 },
+  ct_get_event: { eventId: 1 },
+  ct_get_event_agenda: { eventId: 1 },
+  ct_list_calendars: {},
+  ct_list_calendar_appointments: { calendar_ids: [1] },
+  ct_list_resources: {},
+  ct_list_bookings: { resource_ids: [1] },
+  ct_get_booking: { bookingId: 1 },
+  ct_search_songs: { page: 1, limit: 20 },
+  ct_get_song: { songId: 1 },
+  ct_search_wiki: { query: "policy" },
+  ct_list_wiki_categories: {},
+  ct_list_wiki_pages: { wikiCategoryId: 1 },
+  ct_get_wiki_page: { wikiCategoryId: 1, identifier: "main" }
 };
 
 describe("read tools", () => {
@@ -71,7 +71,7 @@ describe("read tools", () => {
     const result = await runReadTool(
       readToolDefinitions[0]!,
       api,
-      sampleParams.churchtools_whoami ?? {},
+      sampleParams.ct_whoami ?? {},
       testConfig,
       { authInfo }
     );

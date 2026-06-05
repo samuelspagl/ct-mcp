@@ -4,7 +4,7 @@ import { SERVER_NAME, SERVER_VERSION } from "../constants.js";
 import type { ChurchToolsRequester } from "../types.js";
 import { OpenApiCatalog } from "../services/openApiCatalog.js";
 import { registerCatalogTools } from "../tools/catalogTools.js";
-import { registerExplicitTools } from "../tools/explicitTools.js";
+import { explicitToolDefinitions, registerExplicitTools } from "../tools/explicitTools.js";
 import { registerReadTools } from "../tools/readTools.js";
 import { registerWriteTools } from "../tools/writeTools.js";
 
@@ -22,12 +22,13 @@ export function createChurchToolsMcpServer(options: CreateMcpServerOptions): Mcp
     },
     {
       instructions:
-        "Use dedicated ChurchTools tools for common person, group, event, calendar, resource, booking, song, and wiki workflows. Use churchtools_search_actions before generic execute tools for long-tail API operations. Write tools require confirmation."
+        "Use ct_* ChurchTools tools for common person, group, event, calendar, resource, booking, song, and wiki workflows. Use ct_search_actions before generic execute tools for long-tail API operations. Write tools require confirmation."
     }
   );
 
+  const explicitNames = new Set(explicitToolDefinitions.map((definition) => definition.name));
   registerExplicitTools(server, options.api, options.config);
-  registerReadTools(server, options.api, options.config);
+  registerReadTools(server, options.api, options.config, explicitNames);
   registerWriteTools(server, options.api, options.config);
   registerCatalogTools(server, options.api, options.catalog, options.config);
 
