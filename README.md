@@ -78,7 +78,9 @@ The HTTP endpoints are:
 
 ## Tools
 
-Dedicated read tools include current user, persons, person groups/events, groups, group members, events, event agenda, calendars, appointments, resources, bookings, songs, and wiki pages/categories.
+Dedicated `ct_*` tools cover current user context, people, groups, events, calendar appointments, absences, service requests, songs, wiki search/read, and masterdata. They use explicit names such as `ct_list_events`, `ct_list_my_events`, and `ct_list_person_events` so the scope is clear.
+
+The older `churchtools_*` read tools remain available for compatibility and common direct reads.
 
 Dedicated write tools:
 
@@ -101,7 +103,11 @@ docker build -t churchtools-mcp-server .
 docker run --rm -p 3000:3000 --env-file .env churchtools-mcp-server
 ```
 
-Or use `docker-compose.example.yml` as a starting point to run the published `ghcr.io/samuelspagl/ct-mcp:latest` image.
+Or use `docker-compose.example.yml` as a starting point to run the published `ghcr.io/samuelspagl/ct-mcp:latest` image:
+
+```bash
+docker compose -f docker-compose.example.yml up
+```
 
 ## GitHub Actions
 

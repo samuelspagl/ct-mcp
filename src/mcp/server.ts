@@ -4,6 +4,7 @@ import { SERVER_NAME, SERVER_VERSION } from "../constants.js";
 import type { ChurchToolsRequester } from "../types.js";
 import { OpenApiCatalog } from "../services/openApiCatalog.js";
 import { registerCatalogTools } from "../tools/catalogTools.js";
+import { registerExplicitTools } from "../tools/explicitTools.js";
 import { registerReadTools } from "../tools/readTools.js";
 import { registerWriteTools } from "../tools/writeTools.js";
 
@@ -25,6 +26,7 @@ export function createChurchToolsMcpServer(options: CreateMcpServerOptions): Mcp
     }
   );
 
+  registerExplicitTools(server, options.api, options.config);
   registerReadTools(server, options.api, options.config);
   registerWriteTools(server, options.api, options.config);
   registerCatalogTools(server, options.api, options.catalog, options.config);
