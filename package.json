@@ -1,6 +1,6 @@
 {
   "name": "churchtools-mcp-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Streamable HTTP MCP server for ChurchTools.",
   "type": "module",
   "main": "dist/index.js",
