@@ -74,11 +74,19 @@ Or use `docker-compose.example.yml` as a starting point.
 
 ## GitHub Actions
 
-Pull requests run secret scanning with Gitleaks, Node typecheck/test/build, and a Docker image build without pushing.
+Pull requests run version gating, secret scanning with Gitleaks, Node typecheck/test/build, and a Docker image build without pushing. The version gate requires `VERSION`, `package.json`, and `package-lock.json` to contain the same SemVer value. Pull requests fail if the version was not changed from `main` or if tag `v<VERSION>` already exists.
 
-Every push to `main` creates an automatic tag and GitHub release. The release includes the npm build output archive from `dist/`, plus package metadata. The same workflow builds and pushes Docker images to GitHub Container Registry:
+Every push to `main` creates tag `v<VERSION>` and a GitHub release. The release includes the npm build output archive from `dist/`, plus package metadata and the `VERSION` file. The same workflow builds and pushes Docker images to GitHub Container Registry:
 
 ```text
 ghcr.io/<owner>/<repo>:latest
-ghcr.io/<owner>/<repo>:<generated-release-tag>
+ghcr.io/<owner>/<repo>:v<VERSION>
+```
+
+Before merging a release-bound pull request, update all three version locations:
+
+```text
+VERSION
+package.json
+package-lock.json
 ```
