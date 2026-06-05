@@ -70,7 +70,7 @@ docker build -t churchtools-mcp-server .
 docker run --rm -p 3000:3000 --env-file .env churchtools-mcp-server
 ```
 
-Or use `docker-compose.example.yml` as a starting point.
+Or use `docker-compose.example.yml` as a starting point to run the published `ghcr.io/samuelspagl/ct-mcp:latest` image.
 
 ## GitHub Actions
 

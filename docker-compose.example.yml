@@ -1,6 +1,6 @@
 services:
   churchtools-mcp:
-    build: .
+    image: ghcr.io/samuelspagl/ct-mcp:latest
     ports:
       - "3000:3000"
     environment:
