@@ -2,6 +2,8 @@
 
 TypeScript Streamable HTTP MCP server for ChurchTools. It exposes dedicated tools for common ChurchTools reads and updates, plus OpenAPI-backed generic search/execute tools for the long tail of the ChurchTools REST API.
 
+![ChurchTools MCP demo](docs/screenshots/ct-mcp.gif)
+
 ## Configuration
 
 Required environment variables:
