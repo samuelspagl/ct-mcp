@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { z } from "zod";
 import type { AppConfig } from "../config.js";
 import type { ChurchToolsRequester, ResponseFormat } from "../types.js";
@@ -67,7 +68,7 @@ export function registerCatalogTools(
         openWorldHint: true
       }
     },
-    async (params) => runExecuteReadAction(api, catalog, params as ExecuteReadParams, config)
+    async (params, extra) => runExecuteReadAction(api, catalog, params as ExecuteReadParams, config, extra.authInfo)
   );
 
   server.registerTool(
@@ -83,7 +84,8 @@ export function registerCatalogTools(
         openWorldHint: true
       }
     },
-    async (params) => runExecuteWriteAction(api, catalog, params as ExecuteWriteParams, config, confirmationHost())
+    async (params, extra) =>
+      runExecuteWriteAction(api, catalog, params as ExecuteWriteParams, config, confirmationHost(), extra.authInfo)
   );
 }
 
@@ -114,7 +116,8 @@ export async function runExecuteReadAction(
   api: ChurchToolsRequester,
   catalog: OpenApiCatalog,
   params: ExecuteReadParams,
-  config: Pick<AppConfig, "maxResponseBytes">
+  config: Pick<AppConfig, "maxResponseBytes">,
+  authInfo?: AuthInfo
 ): Promise<ToolResult> {
   try {
     const operation = catalog.getById(params.action_id);
@@ -130,7 +133,7 @@ export async function runExecuteReadAction(
       pathParams: params.path_params,
       query: params.query
     });
-    const data = await api.request(request);
+    const data = await api.request(request, authInfo);
     return formatToolResult(data, {
       title: `ChurchTools ${operation.id}`,
       responseFormat: params.response_format as ResponseFormat,
@@ -146,7 +149,8 @@ export async function runExecuteWriteAction(
   catalog: OpenApiCatalog,
   params: ExecuteWriteParams,
   config: Pick<AppConfig, "maxResponseBytes">,
-  confirmationHost?: ConfirmationHost
+  confirmationHost?: ConfirmationHost,
+  authInfo?: AuthInfo
 ): Promise<ToolResult> {
   try {
     const operation = catalog.getById(params.action_id);
@@ -178,7 +182,7 @@ export async function runExecuteWriteAction(
       return confirmation.result;
     }
 
-    const data = await api.request(request);
+    const data = await api.request(request, authInfo);
     return formatToolResult(data, {
       title: `ChurchTools ${operation.id}`,
       responseFormat: params.response_format as ResponseFormat,

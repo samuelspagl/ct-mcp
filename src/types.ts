@@ -1,3 +1,5 @@
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+
 export type Primitive = string | number | boolean;
 export type QueryValue = Primitive | Primitive[] | null | undefined;
 export type QueryParams = Record<string, QueryValue>;
@@ -19,5 +21,5 @@ export interface ChurchToolsRequest {
 }
 
 export interface ChurchToolsRequester {
-  request<T = unknown>(request: ChurchToolsRequest): Promise<T>;
+  request<T = unknown>(request: ChurchToolsRequest, authInfo?: AuthInfo): Promise<T>;
 }

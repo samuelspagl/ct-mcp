@@ -4,8 +4,10 @@ import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } fro
 import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
 import type { AppConfig } from "../config.js";
+import type { ChurchToolsCredential, ChurchToolsCredentialsProvider } from "./credentials.js";
 import type { ChurchToolsRequest, HttpMethod } from "../types.js";
 import { appendQueryString } from "../utils/object.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 
 interface ChurchToolsClientInternals {
   ax?: AxiosInstance;
@@ -41,7 +43,8 @@ export class ChurchToolsApi {
   private readonly buildUrl: (path: string) => string;
 
   constructor(
-    private readonly config: Pick<AppConfig, "churchToolsBaseUrl" | "churchToolsPat" | "requestTimeoutMs">,
+    private readonly config: Pick<AppConfig, "churchToolsBaseUrl" | "requestTimeoutMs">,
+    private readonly credentialsProvider: ChurchToolsCredentialsProvider,
     dependencies: ChurchToolsApiDependencies = {}
   ) {
     if (dependencies.axios && dependencies.buildUrl) {
@@ -50,7 +53,7 @@ export class ChurchToolsApi {
       return;
     }
 
-    const client = new ChurchToolsClient(config.churchToolsBaseUrl, config.churchToolsPat);
+    const client = new ChurchToolsClient(config.churchToolsBaseUrl);
     client.setBaseUrl(config.churchToolsBaseUrl);
     client.setRequestTimeout(config.requestTimeoutMs);
     client.setNeedsAuthentication(true);
@@ -65,15 +68,16 @@ export class ChurchToolsApi {
     this.buildUrl = (path: string) => client.buildUrl(path);
   }
 
-  async request<T = unknown>(request: ChurchToolsRequest): Promise<T> {
+  async request<T = unknown>(request: ChurchToolsRequest, authInfo?: AuthInfo): Promise<T> {
     const url = appendQueryString(this.buildUrl(request.path), request.query);
+    const credentials = await this.credentialsProvider.getCredentials(authInfo);
     const axiosConfig: AxiosRequestConfig = {
       method: request.method,
       url,
       timeout: this.config.requestTimeoutMs,
       headers: {
         Accept: "application/json",
-        Authorization: createChurchToolsAuthorizationHeader(this.config.churchToolsPat),
+        Authorization: createChurchToolsAuthorizationHeader(credentials),
         "Content-Type": "application/json",
         "X-OnlyAuthenticated": "1"
       }
@@ -92,8 +96,12 @@ export class ChurchToolsApi {
   }
 }
 
-export function createChurchToolsAuthorizationHeader(token: string): string {
-  return `Login ${token}`;
+export function createChurchToolsAuthorizationHeader(credentials: ChurchToolsCredential | string): string {
+  if (typeof credentials === "string") {
+    return `Login ${credentials}`;
+  }
+
+  return credentials.type === "login" ? `Login ${credentials.token}` : `Bearer ${credentials.token}`;
 }
 
 function normalizeChurchToolsApiError(error: unknown, method: HttpMethod, path: string): ChurchToolsApiError {

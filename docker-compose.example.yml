@@ -11,3 +11,19 @@ services:
       CHURCHTOOLS_PAT: "${CHURCHTOOLS_PAT}"
       MCP_SERVER_TOKEN: "${MCP_SERVER_TOKEN}"
       CHURCHTOOLS_OPENAPI_URL: "https://example.church.tools/system/runtime/swagger/openapi.json"
+      OAUTH_TOKEN_STORE_PATH: "/data/tokens.db"
+      # OAuth mode:
+      # CHURCHTOOLS_AUTH_MODE: "oauth"
+      # PUBLIC_BASE_URL: "https://mcp.example.org"
+      # MCP_TOKEN_SIGNING_SECRET: "${MCP_TOKEN_SIGNING_SECRET}"
+      # TOKEN_ENCRYPTION_KEY: "${TOKEN_ENCRYPTION_KEY}"
+      # CHURCHTOOLS_OAUTH_CLIENT_ID: "${CHURCHTOOLS_OAUTH_CLIENT_ID}"
+      # CHURCHTOOLS_OAUTH_CLIENT_SECRET: "${CHURCHTOOLS_OAUTH_CLIENT_SECRET}"
+      # CHURCHTOOLS_OAUTH_AUTHORIZE_URL: "https://example.church.tools/oauth/authorize"
+      # CHURCHTOOLS_OAUTH_TOKEN_URL: "https://example.church.tools/oauth/token"
+      # CHURCHTOOLS_OAUTH_PROFILE_URL: "https://example.church.tools/api/whoami"
+    volumes:
+      - churchtools-mcp-data:/data
+
+volumes:
+  churchtools-mcp-data:

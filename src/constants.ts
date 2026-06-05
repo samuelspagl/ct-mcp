@@ -5,3 +5,6 @@ export const DEFAULT_HOST = "0.0.0.0";
 export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 export const DEFAULT_MAX_RESPONSE_BYTES = 100_000;
 export const DEFAULT_OPENAPI_PATH = "/system/runtime/swagger/openapi.json";
+export const DEFAULT_OAUTH_TOKEN_STORE_PATH = "./data/tokens.db";
+export const DEFAULT_MCP_ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
+export const DEFAULT_MCP_REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;

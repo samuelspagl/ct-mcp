@@ -1,4 +1,6 @@
 import type { Request, RequestHandler } from "express";
+import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
+import type { OAuthTokenVerifier } from "@modelcontextprotocol/sdk/server/auth/provider.js";
 import type { AppConfig } from "../config.js";
 
 export function isAuthorizedHeader(authorizationHeader: string | undefined, config: AppConfig): boolean {
@@ -18,6 +20,10 @@ export function isAuthorizedRequest(req: Request, config: AppConfig): boolean {
 }
 
 export function requireMcpAuth(config: AppConfig): RequestHandler {
+  if (config.churchToolsAuthMode === "oauth") {
+    throw new Error("OAuth mode requires requireOAuthMcpAuth.");
+  }
+
   return (req, res, next) => {
     if (isAuthorizedRequest(req, config)) {
       next();
@@ -29,4 +35,14 @@ export function requireMcpAuth(config: AppConfig): RequestHandler {
       message: "Missing or invalid MCP bearer token."
     });
   };
+}
+
+export function requireOAuthMcpAuth(
+  verifier: OAuthTokenVerifier,
+  resourceMetadataUrl: string
+): RequestHandler {
+  return requireBearerAuth({
+    verifier,
+    resourceMetadataUrl
+  });
 }
