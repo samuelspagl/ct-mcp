@@ -6,6 +6,10 @@ import { parseConfig } from "./config.js";
 import { requireMcpAuth } from "./http/auth.js";
 import { createChurchToolsMcpServer } from "./mcp/server.js";
 import { ChurchToolsApi } from "./services/churchtoolsApi.js";
+import {
+  ForwardedPatChurchToolsCredentialsProvider,
+  StaticChurchToolsCredentialsProvider
+} from "./services/credentials.js";
 import { OpenApiCatalog } from "./services/openApiCatalog.js";
 import type { ChurchToolsRequester } from "./types.js";
 
@@ -24,7 +28,7 @@ export interface CreatedApp {
 export async function createApp(options: CreateAppOptions = {}): Promise<CreatedApp> {
   const config = options.config ?? parseConfig();
   const catalog = options.catalog ?? (await OpenApiCatalog.load(config.churchToolsOpenApiUrl));
-  const api = options.api ?? new ChurchToolsApi(config);
+  const api = options.api ?? createChurchToolsApi(config);
   const mcpServer = createChurchToolsMcpServer({ config, api, catalog });
 
   const app = express();
@@ -71,4 +75,16 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Created
   });
 
   return { app, config, catalog };
+}
+
+function createChurchToolsApi(config: AppConfig): ChurchToolsApi {
+  if (config.churchToolsAuthMode === "pat-forwarding") {
+    return new ChurchToolsApi(config, new ForwardedPatChurchToolsCredentialsProvider());
+  }
+
+  if (!config.churchToolsPat) {
+    throw new Error("PAT mode requires CHURCHTOOLS_PAT.");
+  }
+
+  return new ChurchToolsApi(config, new StaticChurchToolsCredentialsProvider(config.churchToolsPat));
 }

@@ -1,9 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { z } from "zod";
 import type { AppConfig } from "../config.js";
-import type { ChurchToolsRequester, ResponseFormat } from "../types.js";
+import type { ChurchToolsRequestContext, ChurchToolsRequester, ResponseFormat } from "../types.js";
 import { compactBody, extractArray, extractObject } from "../utils/object.js";
 import { formatErrorResult, formatToolResult, type ToolResult } from "../utils/format.js";
+import { requestChurchTools } from "../utils/apiRequest.js";
 import { ConfirmationHost, requireWriteConfirmation } from "./confirmation.js";
 import { ResponseFormatSchema } from "./schemas.js";
 
@@ -43,6 +45,10 @@ const updateWikiCategoryInputSchema = {
   response_format: ResponseFormatSchema
 };
 
+interface ToolRequestExtra {
+  authInfo?: AuthInfo;
+}
+
 export function registerWriteTools(
   server: McpServer,
   api: ChurchToolsRequester,
@@ -63,7 +69,8 @@ export function registerWriteTools(
         openWorldHint: true
       }
     },
-    async (params) => runUpdateSong(api, params as UpdateSongParams, config, confirmationHost())
+    async (params, extra: ToolRequestExtra) =>
+      runUpdateSong(api, params as UpdateSongParams, config, confirmationHost(), toolContext(extra))
   );
 
   server.registerTool(
@@ -79,7 +86,8 @@ export function registerWriteTools(
         openWorldHint: true
       }
     },
-    async (params) => runUpdateEvent(api, params as UpdateEventParams, config, confirmationHost())
+    async (params, extra: ToolRequestExtra) =>
+      runUpdateEvent(api, params as UpdateEventParams, config, confirmationHost(), toolContext(extra))
   );
 
   server.registerTool(
@@ -95,7 +103,8 @@ export function registerWriteTools(
         openWorldHint: true
       }
     },
-    async (params) => runUpdateWikiCategory(api, params as UpdateWikiCategoryParams, config, confirmationHost())
+    async (params, extra: ToolRequestExtra) =>
+      runUpdateWikiCategory(api, params as UpdateWikiCategoryParams, config, confirmationHost(), toolContext(extra))
   );
 }
 
@@ -107,7 +116,8 @@ export async function runUpdateSong(
   api: ChurchToolsRequester,
   params: UpdateSongParams,
   config: Pick<AppConfig, "maxResponseBytes">,
-  confirmationHost?: ConfirmationHost
+  confirmationHost?: ConfirmationHost,
+  context: ChurchToolsRequestContext = {}
 ): Promise<ToolResult> {
   try {
     const explicitBody = compactBody({
@@ -125,7 +135,7 @@ export async function runUpdateSong(
       throw new Error("Provide at least one song field to update.");
     }
 
-    const current = await api.request({ method: "GET", path: `/songs/${params.songId}` });
+    const current = await requestChurchTools(api, { method: "GET", path: `/songs/${params.songId}` }, context);
     const currentSong = extractObject(current);
     const body = {
       name: params.name ?? getString(currentSong, "name"),
@@ -147,7 +157,7 @@ export async function runUpdateSong(
       return confirmation.result;
     }
 
-    const data = await api.request({ method: "PUT", path: `/songs/${params.songId}`, body });
+    const data = await requestChurchTools(api, { method: "PUT", path: `/songs/${params.songId}`, body }, context);
     return formatToolResult(data, {
       title: "Updated ChurchTools Song",
       responseFormat: params.response_format as ResponseFormat,
@@ -162,7 +172,8 @@ export async function runUpdateEvent(
   api: ChurchToolsRequester,
   params: UpdateEventParams,
   config: Pick<AppConfig, "maxResponseBytes">,
-  confirmationHost?: ConfirmationHost
+  confirmationHost?: ConfirmationHost,
+  context: ChurchToolsRequestContext = {}
 ): Promise<ToolResult> {
   try {
     const body = compactBody({
@@ -185,7 +196,7 @@ export async function runUpdateEvent(
       return confirmation.result;
     }
 
-    const data = await api.request({ method: "PUT", path: `/events/${params.eventId}`, body });
+    const data = await requestChurchTools(api, { method: "PUT", path: `/events/${params.eventId}`, body }, context);
     return formatToolResult(data, {
       title: "Updated ChurchTools Event",
       responseFormat: params.response_format as ResponseFormat,
@@ -200,7 +211,8 @@ export async function runUpdateWikiCategory(
   api: ChurchToolsRequester,
   params: UpdateWikiCategoryParams,
   config: Pick<AppConfig, "maxResponseBytes">,
-  confirmationHost?: ConfirmationHost
+  confirmationHost?: ConfirmationHost,
+  context: ChurchToolsRequestContext = {}
 ): Promise<ToolResult> {
   try {
     const explicitBody = compactBody({
@@ -215,7 +227,7 @@ export async function runUpdateWikiCategory(
       throw new Error("Provide at least one wiki category field to update.");
     }
 
-    const categoriesResponse = await api.request({ method: "GET", path: "/wiki/categories" });
+    const categoriesResponse = await requestChurchTools(api, { method: "GET", path: "/wiki/categories" }, context);
     const currentCategory = extractArray(categoriesResponse)
       .map((item) => extractObject(item))
       .find((category) => getNumber(category, "id") === params.wikiCategoryId);
@@ -250,7 +262,7 @@ export async function runUpdateWikiCategory(
       return confirmation.result;
     }
 
-    const data = await api.request({ method: "PUT", path: `/wiki/categories/${params.wikiCategoryId}`, body });
+    const data = await requestChurchTools(api, { method: "PUT", path: `/wiki/categories/${params.wikiCategoryId}`, body }, context);
     return formatToolResult(data, {
       title: "Updated ChurchTools Wiki Category",
       responseFormat: params.response_format as ResponseFormat,
@@ -259,6 +271,12 @@ export async function runUpdateWikiCategory(
   } catch (error) {
     return formatErrorResult(error);
   }
+}
+
+function toolContext(extra: ToolRequestExtra): ChurchToolsRequestContext {
+  return {
+    authInfo: extra.authInfo
+  };
 }
 
 function getString(object: Record<string, unknown>, key: string): string | undefined {

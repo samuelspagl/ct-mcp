@@ -4,8 +4,9 @@ import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } fro
 import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
 import type { AppConfig } from "../config.js";
-import type { ChurchToolsRequest, HttpMethod } from "../types.js";
+import type { ChurchToolsRequest, ChurchToolsRequestContext, HttpMethod } from "../types.js";
 import { appendQueryString } from "../utils/object.js";
+import { StaticChurchToolsCredentialsProvider, type ChurchToolsCredentialsProvider } from "./credentials.js";
 
 interface ChurchToolsClientInternals {
   ax?: AxiosInstance;
@@ -39,14 +40,25 @@ export class ChurchToolsApiError extends Error {
 export class ChurchToolsApi {
   private readonly axios: Pick<AxiosInstance, "request">;
   private readonly buildUrl: (path: string) => string;
+  private readonly credentialsProvider: ChurchToolsCredentialsProvider;
 
   constructor(
     private readonly config: Pick<AppConfig, "churchToolsBaseUrl" | "churchToolsPat" | "requestTimeoutMs">,
+    credentialsProviderOrDependencies: ChurchToolsCredentialsProvider | ChurchToolsApiDependencies = new StaticChurchToolsCredentialsProvider(
+      requiredStaticPat(config.churchToolsPat)
+    ),
     dependencies: ChurchToolsApiDependencies = {}
   ) {
-    if (dependencies.axios && dependencies.buildUrl) {
-      this.axios = dependencies.axios;
-      this.buildUrl = dependencies.buildUrl;
+    const resolvedDependencies = isCredentialsProvider(credentialsProviderOrDependencies)
+      ? dependencies
+      : credentialsProviderOrDependencies;
+    this.credentialsProvider = isCredentialsProvider(credentialsProviderOrDependencies)
+      ? credentialsProviderOrDependencies
+      : new StaticChurchToolsCredentialsProvider(requiredStaticPat(config.churchToolsPat));
+
+    if (resolvedDependencies.axios && resolvedDependencies.buildUrl) {
+      this.axios = resolvedDependencies.axios;
+      this.buildUrl = resolvedDependencies.buildUrl;
       return;
     }
 
@@ -65,15 +77,16 @@ export class ChurchToolsApi {
     this.buildUrl = (path: string) => client.buildUrl(path);
   }
 
-  async request<T = unknown>(request: ChurchToolsRequest): Promise<T> {
+  async request<T = unknown>(request: ChurchToolsRequest, context: ChurchToolsRequestContext = {}): Promise<T> {
     const url = appendQueryString(this.buildUrl(request.path), request.query);
+    const credentials = await this.credentialsProvider.getCredentials(context.authInfo);
     const axiosConfig: AxiosRequestConfig = {
       method: request.method,
       url,
       timeout: this.config.requestTimeoutMs,
       headers: {
         Accept: "application/json",
-        Authorization: createChurchToolsAuthorizationHeader(this.config.churchToolsPat),
+        Authorization: createChurchToolsAuthorizationHeader(credentials.token),
         "Content-Type": "application/json",
         "X-OnlyAuthenticated": "1"
       }
@@ -94,6 +107,17 @@ export class ChurchToolsApi {
 
 export function createChurchToolsAuthorizationHeader(token: string): string {
   return `Login ${token}`;
+}
+
+function isCredentialsProvider(value: ChurchToolsCredentialsProvider | ChurchToolsApiDependencies): value is ChurchToolsCredentialsProvider {
+  return "getCredentials" in value && typeof value.getCredentials === "function";
+}
+
+function requiredStaticPat(token: string | undefined): string {
+  if (!token) {
+    throw new Error("Static ChurchTools PAT is required for this credentials provider.");
+  }
+  return token;
 }
 
 function normalizeChurchToolsApiError(error: unknown, method: HttpMethod, path: string): ChurchToolsApiError {

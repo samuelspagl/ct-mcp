@@ -1,8 +1,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { z } from "zod";
 import type { AppConfig } from "../config.js";
-import type { ChurchToolsRequester, ResponseFormat } from "../types.js";
+import type { ChurchToolsRequestContext, ChurchToolsRequester, ResponseFormat } from "../types.js";
 import { formatErrorResult, formatToolResult, type ToolResult } from "../utils/format.js";
+import { requestChurchTools } from "../utils/apiRequest.js";
 import { OpenApiCatalog, summarizeOperation } from "../services/openApiCatalog.js";
 import { ConfirmationHost, requireWriteConfirmation } from "./confirmation.js";
 import { PathParamsSchema, QueryRecordSchema, ResponseFormatSchema, UnknownBodySchema } from "./schemas.js";
@@ -29,6 +31,10 @@ const executeWriteInputSchema = {
   confirm: z.boolean().optional().describe("Set true after confirmation fallback asks for a retry."),
   response_format: ResponseFormatSchema
 };
+
+interface ToolRequestExtra {
+  authInfo?: AuthInfo;
+}
 
 export function registerCatalogTools(
   server: McpServer,
@@ -67,7 +73,8 @@ export function registerCatalogTools(
         openWorldHint: true
       }
     },
-    async (params) => runExecuteReadAction(api, catalog, params as ExecuteReadParams, config)
+    async (params, extra: ToolRequestExtra) =>
+      runExecuteReadAction(api, catalog, params as ExecuteReadParams, config, toolContext(extra))
   );
 
   server.registerTool(
@@ -83,7 +90,8 @@ export function registerCatalogTools(
         openWorldHint: true
       }
     },
-    async (params) => runExecuteWriteAction(api, catalog, params as ExecuteWriteParams, config, confirmationHost())
+    async (params, extra: ToolRequestExtra) =>
+      runExecuteWriteAction(api, catalog, params as ExecuteWriteParams, config, confirmationHost(), toolContext(extra))
   );
 }
 
@@ -114,7 +122,8 @@ export async function runExecuteReadAction(
   api: ChurchToolsRequester,
   catalog: OpenApiCatalog,
   params: ExecuteReadParams,
-  config: Pick<AppConfig, "maxResponseBytes">
+  config: Pick<AppConfig, "maxResponseBytes">,
+  context: ChurchToolsRequestContext = {}
 ): Promise<ToolResult> {
   try {
     const operation = catalog.getById(params.action_id);
@@ -130,7 +139,7 @@ export async function runExecuteReadAction(
       pathParams: params.path_params,
       query: params.query
     });
-    const data = await api.request(request);
+    const data = await requestChurchTools(api, request, context);
     return formatToolResult(data, {
       title: `ChurchTools ${operation.id}`,
       responseFormat: params.response_format as ResponseFormat,
@@ -146,7 +155,8 @@ export async function runExecuteWriteAction(
   catalog: OpenApiCatalog,
   params: ExecuteWriteParams,
   config: Pick<AppConfig, "maxResponseBytes">,
-  confirmationHost?: ConfirmationHost
+  confirmationHost?: ConfirmationHost,
+  context: ChurchToolsRequestContext = {}
 ): Promise<ToolResult> {
   try {
     const operation = catalog.getById(params.action_id);
@@ -178,7 +188,7 @@ export async function runExecuteWriteAction(
       return confirmation.result;
     }
 
-    const data = await api.request(request);
+    const data = await requestChurchTools(api, request, context);
     return formatToolResult(data, {
       title: `ChurchTools ${operation.id}`,
       responseFormat: params.response_format as ResponseFormat,
@@ -187,4 +197,10 @@ export async function runExecuteWriteAction(
   } catch (error) {
     return formatErrorResult(error);
   }
+}
+
+function toolContext(extra: ToolRequestExtra): ChurchToolsRequestContext {
+  return {
+    authInfo: extra.authInfo
+  };
 }

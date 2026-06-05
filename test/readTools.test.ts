@@ -1,4 +1,6 @@
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { describe, expect, it, vi } from "vitest";
+import { FORWARDED_CHURCHTOOLS_PAT_EXTRA_KEY } from "../src/services/credentials.js";
 import { readToolDefinitions, runReadTool } from "../src/tools/readTools.js";
 import type { ChurchToolsRequest } from "../src/types.js";
 import { testConfig } from "./helpers.js";
@@ -51,5 +53,30 @@ describe("read tools", () => {
     expect(requests.map((request) => request.method).every((method) => method === "GET")).toBe(true);
     expect(requests.some((request) => request.path === "/calendars/appointments")).toBe(true);
     expect(requests.some((request) => request.path === "/bookings")).toBe(true);
+  });
+
+  it("passes MCP auth context to ChurchTools requester calls", async () => {
+    const api = {
+      request: vi.fn(async () => ({ data: {} }))
+    };
+    const authInfo: AuthInfo = {
+      token: "mcp-token",
+      clientId: "client",
+      scopes: ["churchtools"],
+      extra: {
+        [FORWARDED_CHURCHTOOLS_PAT_EXTRA_KEY]: "user-pat"
+      }
+    };
+
+    const result = await runReadTool(
+      readToolDefinitions[0]!,
+      api,
+      sampleParams.churchtools_whoami ?? {},
+      testConfig,
+      { authInfo }
+    );
+
+    expect(result.isError).toBeUndefined();
+    expect(api.request).toHaveBeenCalledWith(expect.any(Object), { authInfo });
   });
 });

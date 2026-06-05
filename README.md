@@ -4,12 +4,33 @@ TypeScript Streamable HTTP MCP server for ChurchTools. It exposes dedicated tool
 
 ## Configuration
 
-Required environment variables:
+Common environment variables:
 
 - `CHURCHTOOLS_BASE_URL`: ChurchTools base URL, for example `https://example.church.tools`.
-- `CHURCHTOOLS_AUTH_MODE`: must be `pat` for this version.
-- `CHURCHTOOLS_PAT`: ChurchTools login/API token. The server forwards it as `Authorization: Login <token>`.
+- `CHURCHTOOLS_AUTH_MODE`: `pat` or `pat-forwarding`.
 - `MCP_SERVER_TOKEN`: bearer token required by callers of `POST /mcp`.
+
+### PAT Mode
+
+- `CHURCHTOOLS_AUTH_MODE=pat`
+- `CHURCHTOOLS_PAT`: ChurchTools login/API token. The server forwards it as `Authorization: Login <token>`.
+
+This mode uses one configured ChurchTools token for all MCP callers.
+
+### PAT Forwarding Mode
+
+- `CHURCHTOOLS_AUTH_MODE=pat-forwarding`
+- Do not set `CHURCHTOOLS_PAT`.
+- Every `POST /mcp` request must include the user's ChurchTools PAT in `X-ChurchTools-PAT`.
+
+The server does not store forwarded PATs. It reads the header for the current MCP request and forwards it upstream as `Authorization: Login <token>`. Keep `MCP_SERVER_TOKEN` enabled in this mode so the MCP endpoint itself still has an access control boundary.
+
+Example MCP request headers:
+
+```http
+Authorization: Bearer <mcp-server-token>
+X-ChurchTools-PAT: <user-churchtools-pat>
+```
 
 Optional:
 
@@ -33,6 +54,14 @@ Edit `.env` before starting the server. At minimum, set:
 CHURCHTOOLS_BASE_URL=https://your-domain.church.tools
 CHURCHTOOLS_AUTH_MODE=pat
 CHURCHTOOLS_PAT=your-churchtools-login-token
+MCP_SERVER_TOKEN=choose-a-token-for-mcp-clients
+```
+
+For PAT forwarding, use:
+
+```bash
+CHURCHTOOLS_BASE_URL=https://your-domain.church.tools
+CHURCHTOOLS_AUTH_MODE=pat-forwarding
 MCP_SERVER_TOKEN=choose-a-token-for-mcp-clients
 ```
 

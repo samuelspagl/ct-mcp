@@ -1,9 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { z, type ZodRawShape } from "zod";
 import type { AppConfig } from "../config.js";
-import type { ChurchToolsRequest, ChurchToolsRequester, QueryParams, ResponseFormat } from "../types.js";
+import type { ChurchToolsRequest, ChurchToolsRequestContext, ChurchToolsRequester, QueryParams, ResponseFormat } from "../types.js";
 import { compactQuery } from "../utils/object.js";
 import { formatErrorResult, formatToolResult, type ToolResult } from "../utils/format.js";
+import { requestChurchTools } from "../utils/apiRequest.js";
 import {
   LimitSchema,
   OptionalIntArraySchema,
@@ -18,6 +20,10 @@ export interface ReadToolDefinition {
   description: string;
   inputSchema: ZodRawShape;
   buildRequest: (params: Record<string, unknown>) => ChurchToolsRequest;
+}
+
+interface ToolRequestExtra {
+  authInfo?: AuthInfo;
 }
 
 const responseFormatInput = {
@@ -394,7 +400,8 @@ export function registerReadTools(
           openWorldHint: true
         }
       },
-      async (params) => runReadTool(definition, api, params as Record<string, unknown>, config)
+      async (params, extra: ToolRequestExtra) =>
+        runReadTool(definition, api, params as Record<string, unknown>, config, toolContext(extra))
     );
   }
 }
@@ -403,10 +410,11 @@ export async function runReadTool(
   definition: ReadToolDefinition,
   api: ChurchToolsRequester,
   params: Record<string, unknown>,
-  config: Pick<AppConfig, "maxResponseBytes">
+  config: Pick<AppConfig, "maxResponseBytes">,
+  context: ChurchToolsRequestContext = {}
 ): Promise<ToolResult> {
   try {
-    const data = await api.request(definition.buildRequest(params));
+    const data = await requestChurchTools(api, definition.buildRequest(params), context);
     return formatToolResult(data, {
       title: definition.title,
       responseFormat: params.response_format as ResponseFormat | undefined,
@@ -415,4 +423,10 @@ export async function runReadTool(
   } catch (error) {
     return formatErrorResult(error);
   }
+}
+
+function toolContext(extra: ToolRequestExtra): ChurchToolsRequestContext {
+  return {
+    authInfo: extra.authInfo
+  };
 }

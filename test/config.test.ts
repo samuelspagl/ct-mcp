@@ -18,6 +18,27 @@ describe("config", () => {
     expect(config.mcpServerToken).toBe("mcp-token");
   });
 
+  it("parses PAT forwarding configuration without a stored ChurchTools PAT", () => {
+    const config = parseConfig({
+      CHURCHTOOLS_BASE_URL: "https://example.church.tools",
+      CHURCHTOOLS_AUTH_MODE: "pat-forwarding",
+      MCP_SERVER_TOKEN: "mcp-token"
+    });
+
+    expect(config.churchToolsAuthMode).toBe("pat-forwarding");
+    expect(config.churchToolsPat).toBeUndefined();
+  });
+
+  it("requires CHURCHTOOLS_PAT only for static PAT mode", () => {
+    expect(() =>
+      parseConfig({
+        CHURCHTOOLS_BASE_URL: "https://example.church.tools",
+        CHURCHTOOLS_AUTH_MODE: "pat",
+        MCP_SERVER_TOKEN: "mcp-token"
+      })
+    ).toThrow("CHURCHTOOLS_PAT is required when CHURCHTOOLS_AUTH_MODE=pat");
+  });
+
   it("requires an MCP server token unless unauthenticated MCP is explicitly allowed", () => {
     expect(() =>
       parseConfig({
@@ -33,8 +54,7 @@ describe("config", () => {
       [
         "Invalid environment:",
         "- CHURCHTOOLS_BASE_URL is required",
-        "- CHURCHTOOLS_AUTH_MODE must be set to \"pat\"",
-        "- CHURCHTOOLS_PAT is required"
+        "- CHURCHTOOLS_AUTH_MODE is required"
       ].join("\n")
     );
   });

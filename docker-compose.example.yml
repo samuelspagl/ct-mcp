@@ -9,5 +9,8 @@ services:
       CHURCHTOOLS_BASE_URL: "https://example.church.tools"
       CHURCHTOOLS_AUTH_MODE: "pat"
       CHURCHTOOLS_PAT: "${CHURCHTOOLS_PAT}"
+      # PAT forwarding mode:
+      # CHURCHTOOLS_AUTH_MODE: "pat-forwarding"
+      # Do not set CHURCHTOOLS_PAT; clients send X-ChurchTools-PAT on each MCP request.
       MCP_SERVER_TOKEN: "${MCP_SERVER_TOKEN}"
       CHURCHTOOLS_OPENAPI_URL: "https://example.church.tools/system/runtime/swagger/openapi.json"

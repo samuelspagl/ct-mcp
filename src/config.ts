@@ -12,8 +12,8 @@ export interface AppConfig {
   host: string;
   logLevel: string;
   churchToolsBaseUrl: string;
-  churchToolsAuthMode: "pat";
-  churchToolsPat: string;
+  churchToolsAuthMode: "pat" | "pat-forwarding";
+  churchToolsPat?: string;
   churchToolsOpenApiUrl: string;
   allowUnauthenticatedMcp: boolean;
   mcpServerToken?: string;
@@ -27,8 +27,8 @@ const EnvSchema = z
     HOST: z.string().optional(),
     LOG_LEVEL: z.string().optional(),
     CHURCHTOOLS_BASE_URL: z.string().min(1),
-    CHURCHTOOLS_AUTH_MODE: z.literal("pat"),
-    CHURCHTOOLS_PAT: z.string().min(1),
+    CHURCHTOOLS_AUTH_MODE: z.enum(["pat", "pat-forwarding"]),
+    CHURCHTOOLS_PAT: z.string().optional(),
     CHURCHTOOLS_OPENAPI_URL: z.string().optional(),
     ALLOW_UNAUTHENTICATED_MCP: z.string().optional(),
     MCP_SERVER_TOKEN: z.string().optional(),
@@ -92,6 +92,10 @@ export function parseConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const baseUrl = normalizeChurchToolsBaseUrl(parsed.data.CHURCHTOOLS_BASE_URL);
   const allowUnauthenticatedMcp = parseBoolean(parsed.data.ALLOW_UNAUTHENTICATED_MCP, false);
 
+  if (parsed.data.CHURCHTOOLS_AUTH_MODE === "pat" && !parsed.data.CHURCHTOOLS_PAT) {
+    throw new Error("CHURCHTOOLS_PAT is required when CHURCHTOOLS_AUTH_MODE=pat");
+  }
+
   if (!allowUnauthenticatedMcp && !parsed.data.MCP_SERVER_TOKEN) {
     throw new Error("MCP_SERVER_TOKEN is required unless ALLOW_UNAUTHENTICATED_MCP=true");
   }
@@ -102,7 +106,7 @@ export function parseConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     logLevel: parsed.data.LOG_LEVEL || "info",
     churchToolsBaseUrl: baseUrl,
     churchToolsAuthMode: parsed.data.CHURCHTOOLS_AUTH_MODE,
-    churchToolsPat: parsed.data.CHURCHTOOLS_PAT,
+    ...(parsed.data.CHURCHTOOLS_PAT ? { churchToolsPat: parsed.data.CHURCHTOOLS_PAT } : {}),
     churchToolsOpenApiUrl: parsed.data.CHURCHTOOLS_OPENAPI_URL || defaultOpenApiUrl(baseUrl),
     allowUnauthenticatedMcp,
     ...(parsed.data.MCP_SERVER_TOKEN ? { mcpServerToken: parsed.data.MCP_SERVER_TOKEN } : {}),
@@ -128,8 +132,8 @@ function formatEnvIssues(issues: z.ZodIssue[]): string {
         return `- ${name} is required`;
       }
 
-      if (issue.code === "invalid_literal" && name === "CHURCHTOOLS_AUTH_MODE") {
-        return "- CHURCHTOOLS_AUTH_MODE must be set to \"pat\"";
+      if (issue.code === "invalid_enum_value" && name === "CHURCHTOOLS_AUTH_MODE") {
+        return "- CHURCHTOOLS_AUTH_MODE must be set to \"pat\" or \"pat-forwarding\"";
       }
 
       return `- ${name}: ${issue.message}`;
