@@ -1,6 +1,11 @@
 node_modules
 dist
 coverage
+data
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
 .git
 .env
 .env.*

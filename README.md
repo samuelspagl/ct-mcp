@@ -71,3 +71,14 @@ docker run --rm -p 3000:3000 --env-file .env churchtools-mcp-server
 ```
 
 Or use `docker-compose.example.yml` as a starting point.
+
+## GitHub Actions
+
+Pull requests run secret scanning with Gitleaks, Node typecheck/test/build, and a Docker image build without pushing.
+
+Every push to `main` creates an automatic tag and GitHub release. The release includes the npm build output archive from `dist/`, plus package metadata. The same workflow builds and pushes Docker images to GitHub Container Registry:
+
+```text
+ghcr.io/<owner>/<repo>:latest
+ghcr.io/<owner>/<repo>:<generated-release-tag>
+```
