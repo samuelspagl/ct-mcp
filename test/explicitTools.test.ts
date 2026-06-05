@@ -1,4 +1,6 @@
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { describe, expect, it, vi } from "vitest";
+import { FORWARDED_CHURCHTOOLS_PAT_EXTRA_KEY } from "../src/services/credentials.js";
 import { explicitToolDefinitions, runExplicitTool } from "../src/tools/explicitTools.js";
 import type { ChurchToolsRequest } from "../src/types.js";
 import { testConfig } from "./helpers.js";
@@ -84,6 +86,44 @@ describe("explicit ChurchTools tools", () => {
     });
   });
 
+  it("passes MCP auth context through ct_whoami requests", async () => {
+    const api = {
+      request: vi.fn(async () => ({
+        data: {
+          person: { id: 42, name: "Anna Example", email: "anna@example.test" },
+          user: { id: 7 }
+        }
+      }))
+    };
+    const authInfo: AuthInfo = {
+      token: "mcp-token",
+      clientId: "pat-forwarding",
+      scopes: ["churchtools"],
+      extra: {
+        [FORWARDED_CHURCHTOOLS_PAT_EXTRA_KEY]: "user-pat"
+      }
+    };
+
+    const result = await runExplicitTool(
+      getTool("ct_whoami"),
+      api,
+      { response_format: "json" },
+      testConfig,
+      undefined,
+      { authInfo }
+    );
+
+    expect(result.isError).toBeUndefined();
+    expect(api.request).toHaveBeenCalledWith(
+      {
+        method: "GET",
+        path: "/whoami",
+        query: { only_allow_authenticated: true }
+      },
+      { authInfo }
+    );
+  });
+
   it("does not create an absence unless dryRun is explicitly false", async () => {
     const api = {
       request: vi.fn(async (request: ChurchToolsRequest) => {
@@ -132,7 +172,6 @@ describe("explicit ChurchTools tools", () => {
     });
     expect(api.request).toHaveBeenCalledTimes(1);
   });
-
 
   it("returns structured ambiguity errors from resolvers", async () => {
     const api = {

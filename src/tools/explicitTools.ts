@@ -1,7 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { z, type ZodRawShape } from "zod";
 import type { AppConfig } from "../config.js";
-import type { ChurchToolsRequest, ChurchToolsRequester, QueryParams, ResponseFormat } from "../types.js";
+import type { ChurchToolsRequestContext, ChurchToolsRequester, QueryParams, ResponseFormat } from "../types.js";
 import { compactBody, compactQuery } from "../utils/object.js";
 import { formatToolResult, type ToolResult } from "../utils/format.js";
 import { ConfirmationHost, requireWriteConfirmation } from "./confirmation.js";
@@ -62,6 +63,10 @@ interface ExplicitToolDefinition {
     config: Pick<AppConfig, "maxResponseBytes">,
     confirmationHost?: ConfirmationHost
   ) => Promise<ToolResult>;
+}
+
+interface ToolRequestExtra {
+  authInfo?: AuthInfo;
 }
 
 class StructuredToolError extends Error {
@@ -716,7 +721,8 @@ export function registerExplicitTools(
           openWorldHint: true
         }
       },
-      async (params) => runExplicitTool(definition, api, params as Record<string, unknown>, config, confirmationHost())
+      async (params, extra: ToolRequestExtra) =>
+        runExplicitTool(definition, api, params as Record<string, unknown>, config, confirmationHost(), toolContext(extra))
     );
   }
 }
@@ -726,13 +732,30 @@ export async function runExplicitTool(
   api: ChurchToolsRequester,
   params: Record<string, unknown>,
   config: Pick<AppConfig, "maxResponseBytes">,
-  confirmationHost?: ConfirmationHost
+  confirmationHost?: ConfirmationHost,
+  context: ChurchToolsRequestContext = {}
 ): Promise<ToolResult> {
   try {
-    return await definition.handler(api, params, config, confirmationHost);
+    return await definition.handler(withRequestContext(api, context), params, config, confirmationHost);
   } catch (error) {
     return explicitErrorResult(error);
   }
+}
+
+function toolContext(extra: ToolRequestExtra): ChurchToolsRequestContext {
+  return {
+    authInfo: extra.authInfo
+  };
+}
+
+function withRequestContext(api: ChurchToolsRequester, context: ChurchToolsRequestContext): ChurchToolsRequester {
+  if (!context.authInfo) {
+    return api;
+  }
+
+  return {
+    request: (request, requestContext = {}) => api.request(request, requestContext.authInfo ? requestContext : context)
+  };
 }
 
 function tool(
