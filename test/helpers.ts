@@ -10,6 +10,9 @@ export const testConfig: AppConfig = {
   churchToolsOpenApiUrl: "https://example.church.tools/system/runtime/swagger/openapi.json",
   allowUnauthenticatedMcp: false,
   mcpServerToken: "mcp-token",
+  oauthTokenStorePath: ":memory:",
+  mcpAccessTokenTtlSeconds: 900,
+  mcpRefreshTokenTtlSeconds: 2_592_000,
   requestTimeoutMs: 30_000,
   maxResponseBytes: 100_000
 };

@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { z, type ZodRawShape } from "zod";
 import type { AppConfig } from "../config.js";
 import type { ChurchToolsRequest, ChurchToolsRequester, QueryParams, ResponseFormat } from "../types.js";
@@ -33,7 +34,7 @@ export const readToolDefinitions: ReadToolDefinition[] = [
   {
     name: "churchtools_whoami",
     title: "ChurchTools Current User",
-    description: "Return the ChurchTools user associated with the configured token.",
+    description: "Return the current ChurchTools user. In OAuth mode this returns the stored /oauth/userinfo profile.",
     inputSchema: {
       ...responseFormatInput
     },
@@ -394,7 +395,7 @@ export function registerReadTools(
           openWorldHint: true
         }
       },
-      async (params) => runReadTool(definition, api, params as Record<string, unknown>, config)
+      async (params, extra) => runReadTool(definition, api, params as Record<string, unknown>, config, extra.authInfo)
     );
   }
 }
@@ -403,10 +404,11 @@ export async function runReadTool(
   definition: ReadToolDefinition,
   api: ChurchToolsRequester,
   params: Record<string, unknown>,
-  config: Pick<AppConfig, "maxResponseBytes">
+  config: Pick<AppConfig, "maxResponseBytes">,
+  authInfo?: AuthInfo
 ): Promise<ToolResult> {
   try {
-    const data = await api.request(definition.buildRequest(params));
+    const data = await api.request(definition.buildRequest(params), authInfo);
     return formatToolResult(data, {
       title: definition.title,
       responseFormat: params.response_format as ResponseFormat | undefined,

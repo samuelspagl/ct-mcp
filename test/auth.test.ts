@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { isAuthorizedHeader } from "../src/http/auth.js";
+import { describe, expect, it, vi } from "vitest";
+import { isAuthorizedHeader, requireOAuthMcpAuth } from "../src/http/auth.js";
 import { testConfig } from "./helpers.js";
 
 describe("MCP auth", () => {
@@ -14,5 +14,32 @@ describe("MCP auth", () => {
 
   it("can be explicitly disabled for local development", () => {
     expect(isAuthorizedHeader(undefined, { ...testConfig, allowUnauthenticatedMcp: true })).toBe(true);
+  });
+
+  it("returns OAuth protected-resource metadata on missing OAuth bearer tokens", async () => {
+    const middleware = requireOAuthMcpAuth(
+      {
+        verifyAccessToken: vi.fn()
+      },
+      "https://mcp.example.org/.well-known/oauth-protected-resource/mcp"
+    );
+    const req = { headers: {} };
+    const res = {
+      set: vi.fn().mockReturnThis(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis()
+    };
+    const next = vi.fn();
+
+    await middleware(req as never, res as never, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.set).toHaveBeenCalledWith(
+      "WWW-Authenticate",
+      expect.stringContaining(
+        'resource_metadata="https://mcp.example.org/.well-known/oauth-protected-resource/mcp"'
+      )
+    );
   });
 });

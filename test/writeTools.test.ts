@@ -29,11 +29,14 @@ describe("write tools", () => {
     );
 
     expect(result.isError).toBeUndefined();
-    expect(api.request).toHaveBeenCalledWith({
-      method: "PUT",
-      path: "/events/1",
-      body: { note: "Updated" }
-    });
+    expect(api.request).toHaveBeenCalledWith(
+      {
+        method: "PUT",
+        path: "/events/1",
+        body: { note: "Updated" }
+      },
+      undefined
+    );
   });
 
   it("supports tag-only song updates by preserving current required PUT fields", async () => {
@@ -51,11 +54,14 @@ describe("write tools", () => {
     );
 
     expect(result.isError).toBeUndefined();
-    expect(api.request).toHaveBeenLastCalledWith({
-      method: "PUT",
-      path: "/songs/7",
-      body: { name: "Existing Song", categoryId: 2, tags: ["Worship"] }
-    });
+    expect(api.request).toHaveBeenLastCalledWith(
+      {
+        method: "PUT",
+        path: "/songs/7",
+        body: { name: "Existing Song", categoryId: 2, tags: ["Worship"] }
+      },
+      undefined
+    );
   });
 
   it("updates wiki categories while preserving required PUT fields", async () => {
@@ -84,16 +90,19 @@ describe("write tools", () => {
     );
 
     expect(result.isError).toBeUndefined();
-    expect(api.request).toHaveBeenLastCalledWith({
-      method: "PUT",
-      path: "/wiki/categories/3",
-      body: {
-        name: "Documentation",
-        sortKey: 10,
-        inMenu: true,
-        fileAccessWithoutPermission: false,
-        campusId: null
-      }
-    });
+    expect(api.request).toHaveBeenLastCalledWith(
+      {
+        method: "PUT",
+        path: "/wiki/categories/3",
+        body: {
+          name: "Documentation",
+          sortKey: 10,
+          inMenu: true,
+          fileAccessWithoutPermission: false,
+          campusId: null
+        }
+      },
+      undefined
+    );
   });
 });

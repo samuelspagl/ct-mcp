@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ChurchToolsApi, createChurchToolsAuthorizationHeader } from "../src/services/churchtoolsApi.js";
+import { PatChurchToolsCredentialsProvider } from "../src/services/credentials.js";
 import { testConfig } from "./helpers.js";
 
 describe("ChurchToolsApi", () => {
@@ -9,7 +10,7 @@ describe("ChurchToolsApi", () => {
 
   it("sends PAT auth and query params through the wrapped client transport", async () => {
     const request = vi.fn(async () => ({ data: { ok: true } }));
-    const api = new ChurchToolsApi(testConfig, {
+    const api = new ChurchToolsApi(testConfig, new PatChurchToolsCredentialsProvider("ct-token"), {
       axios: { request } as never,
       buildUrl: (path) => `https://example.church.tools/api${path}`
     });

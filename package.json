@@ -18,7 +18,7 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.5.0"
   },
   "dependencies": {
     "@churchtools/churchtools-client": "^1.6.0",
