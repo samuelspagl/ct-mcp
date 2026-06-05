@@ -98,9 +98,9 @@ export const readToolDefinitions: ReadToolDefinition[] = [
     buildRequest: (params) => ({ method: "GET", path: `/persons/${params.personId}/groups` })
   },
   {
-    name: "ct_list_person_events",
-    title: "ChurchTools Person Events",
-    description: "List events a person is involved with.",
+    name: "ct_list_person_involved_events",
+    title: "ChurchTools Person Involved Events",
+    description: "List events from /persons/{personId}/events where ChurchTools marks a person as involved.",
     inputSchema: {
       personId: z.number().int().describe("Person ID."),
       ...responseFormatInput

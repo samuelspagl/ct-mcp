@@ -80,6 +80,12 @@ The HTTP endpoints are:
 
 Dedicated `ct_*` tools cover current user context, people, groups, events, calendars, resources, bookings, absences, service requests, songs, wiki search/read, and masterdata. The server intentionally exposes only the `ct_*` namespace so clients do not see duplicate `ct_*` and `churchtools_*` variants of the same workflows.
 
+Event tools use explicit scope:
+
+- `ct_list_events` and `ct_get_event_briefing` are general visible-event tools and do not imply that a person is involved.
+- `ct_list_my_involved_events`, `ct_list_person_involved_events`, and `ct_get_my_involved_event_briefing` use `/persons/{personId}/events`, meaning ChurchTools marks the person as involved in those events.
+- `ct_list_my_service_requests` is the primary tool for concrete assigned tasks/service requests; those are separate from involved events.
+
 Dedicated write tools:
 
 - `ct_update_song`

@@ -18,8 +18,8 @@ const DateRangeInput = {
 };
 
 const PaginationInput = {
-  page: z.number().int().positive().optional(),
-  limit: z.number().int().positive().max(100).optional()
+  page: z.number().int().positive().optional().describe("ChurchTools result page."),
+  limit: z.number().int().positive().max(100).optional().describe("Maximum number of ChurchTools records to return.")
 };
 
 const PersonSelectorSchema = z
@@ -103,11 +103,14 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     );
   }),
 
-  tool("ct_get_my_profile", "My ChurchTools Profile", "Return the current authenticated person's profile with optional enrichments.", {
-    includeGroups: z.boolean().optional(),
-    includeTags: z.boolean().optional(),
-    includeRelationships: z.boolean().optional(),
-    includeEvents: z.boolean().optional(),
+  tool("ct_get_my_profile", "My ChurchTools Profile", "Return the current authenticated person's profile with clearly scoped optional enrichments.", {
+    includeGroups: z.boolean().optional().describe("Include groups where the authenticated person is a member."),
+    includeTags: z.boolean().optional().describe("Include tags assigned to the authenticated person."),
+    includeRelationships: z.boolean().optional().describe("Include relationship records for the authenticated person."),
+    includeInvolvedEvents: z
+      .boolean()
+      .optional()
+      .describe("Include events from /persons/{personId}/events where ChurchTools marks the authenticated person as involved; this is not all visible events."),
     ...responseFormatInput
   }, async (api, params, config) => {
     const current = await resolveCurrentPerson(api);
@@ -118,7 +121,9 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     await maybeAdd(data, "relationships", params.includeRelationships, () =>
       api.request({ method: "GET", path: `/persons/${current.personId}/relationships` })
     );
-    await maybeAdd(data, "events", params.includeEvents, () => api.request({ method: "GET", path: `/persons/${current.personId}/events` }));
+    await maybeAdd(data, "involvedEvents", params.includeInvolvedEvents, () =>
+      api.request({ method: "GET", path: `/persons/${current.personId}/events` })
+    );
     return ok({ personId: current.personId, ...data }, "My ChurchTools Profile", params, config);
   }),
 
@@ -141,14 +146,20 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     return ok({ people, pagination: getPaginationMeta(response) }, "Search ChurchTools People", params, config);
   }),
 
-  tool("ct_get_person_profile", "ChurchTools Person Profile", "Return a composite profile for a specific person.", {
+  tool("ct_get_person_profile", "ChurchTools Person Profile", "Return a composite profile for a specific person with clearly scoped optional enrichments.", {
     person: PersonSelectorSchema,
-    includeGroups: z.boolean().optional(),
-    includeTags: z.boolean().optional(),
-    includeRelationships: z.boolean().optional(),
-    includeEvents: z.boolean().optional(),
-    includeAbsences: z.boolean().optional(),
-    includeServiceRequests: z.boolean().optional(),
+    includeGroups: z.boolean().optional().describe("Include groups where the selected person is a member."),
+    includeTags: z.boolean().optional().describe("Include tags assigned to the selected person."),
+    includeRelationships: z.boolean().optional().describe("Include relationship records for the selected person."),
+    includeInvolvedEvents: z
+      .boolean()
+      .optional()
+      .describe("Include events from /persons/{personId}/events where ChurchTools marks the selected person as involved; this is not all visible events."),
+    includeAbsences: z.boolean().optional().describe("Include absences recorded for the selected person."),
+    includeServiceRequests: z
+      .boolean()
+      .optional()
+      .describe("Include service requests/tasks assigned to the selected person; these are separate from involved events."),
     ...responseFormatInput
   }, async (api, params, config) => {
     const resolved = await resolvePerson(api, params.person as PersonSelector);
@@ -159,7 +170,9 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     await maybeAdd(data, "relationships", params.includeRelationships, () =>
       api.request({ method: "GET", path: `/persons/${resolved.id}/relationships` })
     );
-    await maybeAdd(data, "events", params.includeEvents, () => api.request({ method: "GET", path: `/persons/${resolved.id}/events` }));
+    await maybeAdd(data, "involvedEvents", params.includeInvolvedEvents, () =>
+      api.request({ method: "GET", path: `/persons/${resolved.id}/events` })
+    );
     await maybeAdd(data, "absences", params.includeAbsences, () => api.request({ method: "GET", path: `/persons/${resolved.id}/absences` }));
     await maybeAdd(data, "serviceRequests", params.includeServiceRequests, () =>
       api.request({ method: "GET", path: `/persons/${resolved.id}/servicerequests` })
@@ -281,13 +294,13 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     return ok({ groupId: group.id, members, pagination: getPaginationMeta(response) }, "ChurchTools Group Members", params, config);
   }),
 
-  tool("ct_list_events", "ChurchTools Events", "List all visible events in a date range.", {
+  tool("ct_list_events", "ChurchTools Events", "List all visible ChurchTools events in a date range; this is not person-specific and does not imply user tasks.", {
     from: z.string(),
     to: z.string(),
-    calendarIds: z.array(z.number().int()).optional(),
-    serviceIds: z.array(z.number().int()).optional(),
-    includeAgenda: z.boolean().optional(),
-    includeSongs: z.boolean().optional(),
+    calendarIds: z.array(z.number().int()).optional().describe("Filter general visible events by calendar IDs."),
+    serviceIds: z.array(z.number().int()).optional().describe("Filter general visible events by service IDs; this does not mean user assignments."),
+    includeAgenda: z.boolean().optional().describe("Include the event agenda/order of service for each returned event."),
+    includeSongs: z.boolean().optional().describe("Include songs from the event agenda for each returned event."),
     ...PaginationInput,
     ...responseFormatInput
   }, async (api, params, config) => {
@@ -296,38 +309,44 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     return ok({ events, pagination: getPaginationMeta(response) }, "ChurchTools Events", params, config);
   }),
 
-  tool("ct_list_my_events", "My ChurchTools Events", "List events involving the authenticated user.", {
+  tool("ct_list_my_involved_events", "My Involved ChurchTools Events", "List events from /persons/{personId}/events where ChurchTools marks the authenticated user as involved; use service-request tools for concrete tasks.", {
     ...DateRangeInput,
-    includeAgenda: z.boolean().optional(),
-    includeSongs: z.boolean().optional(),
-    includeServiceRequests: z.boolean().optional(),
+    includeAgenda: z.boolean().optional().describe("Include the event agenda/order of service for each involved event."),
+    includeSongs: z.boolean().optional().describe("Include songs from the event agenda for each involved event."),
+    includeServiceRequests: z
+      .boolean()
+      .optional()
+      .describe("Also include the authenticated user's service requests/tasks separately from the involved events."),
     ...PaginationInput,
     ...responseFormatInput
   }, async (api, params, config) => {
     const current = await resolveCurrentPerson(api);
     const data = await listPersonEvents(api, current.personId, params);
-    return ok(data, "My ChurchTools Events", params, config);
+    return ok(data, "My Involved ChurchTools Events", params, config);
   }),
 
-  tool("ct_list_person_events", "ChurchTools Person Events", "List events involving a specific person.", {
+  tool("ct_list_person_involved_events", "ChurchTools Person Involved Events", "List events from /persons/{personId}/events where ChurchTools marks a specific person as involved; use service-request tools for concrete tasks.", {
     person: PersonSelectorSchema,
     ...DateRangeInput,
-    includeAgenda: z.boolean().optional(),
-    includeSongs: z.boolean().optional(),
-    includeServiceRequests: z.boolean().optional(),
+    includeAgenda: z.boolean().optional().describe("Include the event agenda/order of service for each involved event."),
+    includeSongs: z.boolean().optional().describe("Include songs from the event agenda for each involved event."),
+    includeServiceRequests: z
+      .boolean()
+      .optional()
+      .describe("Also include the selected person's service requests/tasks separately from the involved events."),
     ...PaginationInput,
     ...responseFormatInput
   }, async (api, params, config) => {
     const person = await resolvePerson(api, params.person as PersonSelector);
     const data = await listPersonEvents(api, person.id, params);
-    return ok(data, "ChurchTools Person Events", params, config);
+    return ok(data, "ChurchTools Person Involved Events", params, config);
   }),
 
-  tool("ct_get_event_briefing", "ChurchTools Event Briefing", "Return useful information for one event.", {
+  tool("ct_get_event_briefing", "ChurchTools Event Briefing", "Return useful information for one event without checking whether any person is involved.", {
     event: EventSelectorSchema,
-    includeAgenda: z.boolean().optional(),
-    includeSongs: z.boolean().optional(),
-    includeFiles: z.boolean().optional(),
+    includeAgenda: z.boolean().optional().describe("Include the event agenda/order of service."),
+    includeSongs: z.boolean().optional().describe("Include songs from the event agenda."),
+    includeFiles: z.boolean().optional().describe("Include files attached to the event."),
     ...responseFormatInput
   }, async (api, params, config) => {
     const event = await resolveEvent(api, params.event as EventSelector);
@@ -335,24 +354,25 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     return ok(data, "ChurchTools Event Briefing", params, config);
   }),
 
-  tool("ct_get_my_event_briefing", "My ChurchTools Event Briefing", "Return useful information for one event involving the authenticated user.", {
+  tool("ct_get_my_involved_event_briefing", "My Involved ChurchTools Event Briefing", "Return one event briefing only if the event is listed in /persons/{personId}/events for the authenticated user.", {
     event: EventSelectorSchema,
-    includeAgenda: z.boolean().optional(),
-    includeSongs: z.boolean().optional(),
-    includeFiles: z.boolean().optional(),
+    includeAgenda: z.boolean().optional().describe("Include the event agenda/order of service."),
+    includeSongs: z.boolean().optional().describe("Include songs from the event agenda."),
+    includeFiles: z.boolean().optional().describe("Include files attached to the event."),
     ...responseFormatInput
   }, async (api, params, config) => {
     const current = await resolveCurrentPerson(api);
     const event = await resolveEvent(api, params.event as EventSelector);
+    await assertPersonInvolvedInEvent(api, current.personId, event.id);
     const data = await getEventBriefing(api, event.id, params);
-    return ok({ personId: current.personId, ...data }, "My ChurchTools Event Briefing", params, config);
+    return ok({ personId: current.personId, ...data }, "My Involved ChurchTools Event Briefing", params, config);
   }),
 
-  tool("ct_list_calendar_appointments", "ChurchTools Calendar Appointments", "List visible calendar appointments.", {
+  tool("ct_list_calendar_appointments", "ChurchTools Calendar Appointments", "List visible calendar appointments; this is calendar-scoped and not person-specific or task-specific.", {
     from: z.string(),
     to: z.string(),
-    calendarIds: z.array(z.number().int()).optional(),
-    includeEvent: z.boolean().optional(),
+    calendarIds: z.array(z.number().int()).optional().describe("Filter visible calendar appointments by calendar IDs."),
+    includeEvent: z.boolean().optional().describe("Include the linked event object when ChurchTools exposes it."),
     ...PaginationInput,
     ...responseFormatInput
   }, async (api, params, config) => {
@@ -368,37 +388,6 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
       })
     });
     return ok({ appointments: unwrapList(response), pagination: getPaginationMeta(response) }, "ChurchTools Calendar Appointments", params, config);
-  }),
-
-  tool("ct_list_my_calendar_appointments", "My ChurchTools Calendar Appointments", "List calendar appointments that may be relevant to the authenticated user.", {
-    from: z.string(),
-    to: z.string(),
-    includeEvent: z.boolean().optional(),
-    ...PaginationInput,
-    ...responseFormatInput
-  }, async (api, params, config) => {
-    const current = await resolveCurrentPerson(api);
-    const response = await api.request({
-      method: "GET",
-      path: "/calendars/appointments",
-      query: compactQuery({
-        from: params.from as string,
-        to: params.to as string,
-        include: params.includeEvent ? "event" : undefined,
-        ...paginationQuery(params)
-      })
-    });
-    return ok(
-      {
-        personId: current.personId,
-        appointments: unwrapList(response),
-        warning: "This ChurchTools endpoint may not expose reliable person-specific calendar filtering; returned visible appointments.",
-        pagination: getPaginationMeta(response)
-      },
-      "My ChurchTools Calendar Appointments",
-      params,
-      config
-    );
   }),
 
   tool("ct_list_my_absences", "My ChurchTools Absences", "List absences of the authenticated user.", {
@@ -485,9 +474,9 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     return ok({ dryRun: false, personId: person.id, absence: unwrapData(response) }, "Create ChurchTools Person Absence", params, config);
   }),
 
-  tool("ct_list_my_service_requests", "My ChurchTools Service Requests", "List service requests for the authenticated user.", {
-    includePast: z.boolean().optional(),
-    includeAnswered: z.boolean().optional(),
+  tool("ct_list_my_service_requests", "My ChurchTools Service Requests", "List concrete service requests/tasks assigned to the authenticated user; these are separate from involved events.", {
+    includePast: z.boolean().optional().describe("Include past service requests/tasks."),
+    includeAnswered: z.boolean().optional().describe("Include service requests/tasks that were already accepted or declined."),
     ...responseFormatInput
   }, async (api, params, config) => {
     const current = await resolveCurrentPerson(api);
@@ -495,10 +484,10 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     return ok({ personId: current.personId, serviceRequests: unwrapList(response) }, "My ChurchTools Service Requests", params, config);
   }),
 
-  tool("ct_list_person_service_requests", "ChurchTools Person Service Requests", "List service requests for a specific person.", {
+  tool("ct_list_person_service_requests", "ChurchTools Person Service Requests", "List concrete service requests/tasks assigned to a specific person; these are separate from involved events.", {
     person: PersonSelectorSchema,
-    includePast: z.boolean().optional(),
-    includeAnswered: z.boolean().optional(),
+    includePast: z.boolean().optional().describe("Include past service requests/tasks."),
+    includeAnswered: z.boolean().optional().describe("Include service requests/tasks that were already accepted or declined."),
     ...responseFormatInput
   }, async (api, params, config) => {
     const person = await resolvePerson(api, params.person as PersonSelector);
@@ -584,7 +573,7 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     return ok({ song: unwrapData(response) }, "ChurchTools Song", params, config);
   }),
 
-  tool("ct_list_event_songs", "ChurchTools Event Songs", "List songs used in a specific event agenda.", {
+  tool("ct_list_event_songs", "ChurchTools Event Songs", "List songs used in the agenda of a specific event; no person involvement is checked.", {
     event: EventSelectorSchema,
     ...responseFormatInput
   }, async (api, params, config) => {
@@ -593,30 +582,30 @@ export const explicitToolDefinitions: ExplicitToolDefinition[] = [
     return ok({ eventId: event.id, songs: unwrapList(response) }, "ChurchTools Event Songs", params, config);
   }),
 
-  tool("ct_list_my_upcoming_event_songs", "My Upcoming ChurchTools Event Songs", "List songs from upcoming events where the authenticated user is involved.", {
+  tool("ct_list_my_involved_upcoming_event_songs", "My Involved Upcoming ChurchTools Event Songs", "List songs from upcoming events returned by /persons/{personId}/events for the authenticated user.", {
     from: z.string().optional(),
     to: z.string().optional(),
-    limitEvents: z.number().int().positive().max(100).optional(),
+    limitEvents: z.number().int().positive().max(100).optional().describe("Maximum involved events to inspect for agenda songs."),
     ...responseFormatInput
   }, async (api, params, config) => {
     const dateRange = defaultUpcomingRange(params);
     const current = await resolveCurrentPerson(api);
     const eventData = await listPersonEvents(api, current.personId, dateRange);
-    const events = unwrapEventItems(eventData.events).slice(0, (params.limitEvents as number | undefined) ?? DEFAULT_ENRICH_LIMIT);
+    const events = unwrapEventItems(eventData.involvedEvents).slice(0, (params.limitEvents as number | undefined) ?? DEFAULT_ENRICH_LIMIT);
     const withSongs = await Promise.all(
       events.map(async (event) => ({
         event,
         songs: unwrapList(await api.request({ method: "GET", path: `/events/${idOf(event)}/agenda/songs` }))
       }))
     );
-    return ok({ personId: current.personId, events: withSongs }, "My Upcoming ChurchTools Event Songs", params, config);
+    return ok({ personId: current.personId, involvedEvents: withSongs }, "My Involved Upcoming ChurchTools Event Songs", params, config);
   }),
 
   tool("ct_get_song_usage_report", "ChurchTools Song Usage Report", "Create a simple usage report of songs over a date range.", {
     from: z.string(),
     to: z.string(),
     groupBy: z.enum(["song", "event"]).optional(),
-    limitEvents: z.number().int().positive().max(250).optional(),
+    limitEvents: z.number().int().positive().max(250).optional().describe("Maximum general visible events to inspect for agenda songs."),
     ...responseFormatInput
   }, async (api, params, config) => {
     const response = await api.request({ method: "GET", path: "/events", query: eventListQuery(params) });
@@ -885,16 +874,37 @@ async function listPersonEvents(api: ChurchToolsRequester, personId: number, par
     path: `/persons/${personId}/events`,
     query: compactQuery({ ...dateRangeQuery(params), ...paginationQuery(params) })
   });
-  const events = await enrichEvents(api, filterByDate(unwrapList(response), params), params);
+  const involvedEvents = await enrichEvents(api, filterByDate(unwrapList(response), params), params);
   const data: Record<string, unknown> = {
     personId,
-    events,
+    involvedEvents,
     pagination: getPaginationMeta(response)
   };
   if (params.includeServiceRequests) {
     data.serviceRequests = unwrapList(await api.request({ method: "GET", path: `/persons/${personId}/servicerequests` }));
   }
   return data;
+}
+
+async function assertPersonInvolvedInEvent(api: ChurchToolsRequester, personId: number, eventId: number): Promise<void> {
+  const response = await api.request({
+    method: "GET",
+    path: `/persons/${personId}/events`,
+    query: { limit: DEFAULT_REPORT_LIMIT }
+  });
+  const involvedEvents = unwrapList(response);
+  if (involvedEvents.some((event) => idOf(event) === eventId)) {
+    return;
+  }
+
+  throw new StructuredToolError(
+    "EVENT_NOT_INVOLVED",
+    "The selected event is not listed in /persons/{personId}/events for the authenticated user.",
+    {
+      personId,
+      eventId
+    }
+  );
 }
 
 async function getEventBriefing(api: ChurchToolsRequester, eventId: number, params: Record<string, unknown>): Promise<Record<string, unknown>> {

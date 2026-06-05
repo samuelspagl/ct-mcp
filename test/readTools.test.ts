@@ -10,7 +10,7 @@ const sampleParams: Record<string, Record<string, unknown>> = {
   ct_list_persons: { page: 1, limit: 20 },
   ct_get_person: { personId: 1 },
   ct_list_person_groups: { personId: 1 },
-  ct_list_person_events: { personId: 1 },
+  ct_list_person_involved_events: { personId: 1 },
   ct_list_groups: { page: 1, limit: 20 },
   ct_get_group: { groupId: 1 },
   ct_list_group_members: { groupId: 1, page: 1, limit: 20 },

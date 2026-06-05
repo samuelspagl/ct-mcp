@@ -53,8 +53,16 @@ describe("MCP tool registration", () => {
 
     expect(names).toContain("ct_whoami");
     expect(names).toContain("ct_list_resources");
+    expect(names).toContain("ct_list_my_involved_events");
+    expect(names).toContain("ct_list_person_involved_events");
+    expect(names).toContain("ct_get_my_involved_event_briefing");
     expect(names).toContain("ct_update_song");
     expect(names).toContain("ct_search_actions");
+    expect(names).not.toContain("ct_list_my_events");
+    expect(names).not.toContain("ct_list_person_events");
+    expect(names).not.toContain("ct_get_my_event_briefing");
+    expect(names).not.toContain("ct_list_my_calendar_appointments");
+    expect(names).not.toContain("ct_list_my_upcoming_event_songs");
     expect(names.every((name) => name.startsWith("ct_"))).toBe(true);
     expect(names.filter((name) => name.startsWith("churchtools_"))).toEqual([]);
     expect(new Set(names).size).toBe(names.length);
